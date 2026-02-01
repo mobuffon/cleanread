@@ -1,0 +1,92 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: cleanread_postgres
+    environment:
+      POSTGRES_USER: cleanread
+      POSTGRES_PASSWORD: cleanread_dev
+      POSTGRES_DB: cleanread
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cleanread"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: cleanread_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cleanread_backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./backend:/app
+      - backend_storage:/app/storage
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://cleanread:cleanread_dev@postgres:5432/cleanread
+      - REDIS_URL=redis://redis:6379
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - STORAGE_PATH=/app/storage
+      - DATALAB_API_KEY=${DATALAB_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cleanread_celery
+    command: celery -A app.tasks.celery_app worker --loglevel=info
+    volumes:
+      - ./backend:/app
+      - backend_storage:/app/storage
+    environment:
+      - DATABASE_URL=postgresql://cleanread:cleanread_dev@postgres:5432/cleanread
+      - REDIS_URL=redis://redis:6379
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - STORAGE_PATH=/app/storage
+      - DATALAB_API_KEY=${DATALAB_API_KEY}
+    depends_on:
+      - postgres
+      - redis
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cleanread_frontend
+    command: npm run dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  backend_storage:

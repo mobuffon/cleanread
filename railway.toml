@@ -1,0 +1,10 @@
+[build]
+builder = "nixpacks"
+buildCommand = "echo 'Using docker-compose services'"
+
+[deploy]
+startCommand = "docker-compose up"
+healthcheckPath = "/api/v1/health"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
