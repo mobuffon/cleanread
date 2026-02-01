@@ -34,6 +34,11 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
     )
   }
 
+  // Redirect to dashboard if already authenticated
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />
+  }
+
   // Don't auto-redirect on homepage - let users see it
   return <>{children}</>
 }
