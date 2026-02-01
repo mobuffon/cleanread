@@ -1,0 +1,46 @@
+services:
+  # Backend API Service
+  - type: web
+    name: cleanread-backend
+    env: python
+    buildCommand: cd backend && pip install -r requirements.txt
+    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cleanread-db
+          property: connectionString
+      - key: REDIS_URL
+        fromDatabase:
+          name: cleanread-redis
+          property: connectionString
+      - key: DATALAB_API_KEY
+        sync: false  # You'll set this manually in dashboard
+      - key: ALLOWED_ORIGINS
+        value: "https://cleanread-frontend.onrender.com"
+      - key: FRONTEND_URL
+        value: "https://cleanread-frontend.onrender.com"
+
+  # Frontend Static Site
+  - type: web
+    name: cleanread-frontend
+    env: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        value: "https://cleanread-backend.onrender.com"
+
+  # PostgreSQL Database
+  - type: pserv
+    name: cleanread-db
+    env: postgresql
+    plan: free
+
+  # Redis Database  
+  - type: pserv
+    name: cleanread-redis
+    env: redis
+    plan: free
