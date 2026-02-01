@@ -24,6 +24,7 @@ class Settings(BaseSettings):
         "http://localhost:5173",  # Vite dev server
         "http://localhost:3000",  # Alternative frontend port
         "http://localhost:8000",  # Backend itself
+        "*",  # Allow all origins for production (same-domain deployment)
     ]
 
     # Database
