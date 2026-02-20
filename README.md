@@ -1,6 +1,7 @@
 # CleanRead 📚
 
 Convert PDFs, academic papers, and web content into high-quality EPUB files optimized for Kindle and e-ink devices.
+- checkout here free server so it might take a while: https://cleanread-o09g.onrender.com/
 
 ## 🎯 Problem Statement
 
