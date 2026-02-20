@@ -1,174 +1,88 @@
-# CleanRead 📚
+# CleanRead
 
-Convert PDFs, academic papers, and web content into high-quality EPUB files optimized for Kindle and e-ink devices.
-- checkout here free server so it might take a while: https://cleanread-o09g.onrender.com/
+Convert PDFs into high-quality EPUB files optimized for Kindle and e-ink devices.
 
-## 🎯 Problem Statement
+**Live Demo**: https://cleanread-o09g.onrender.com/ (free tier - may take a moment to wake up)
 
-Reading PDFs on Kindle is painful due to:
-- Fixed layouts that don't reflow
-- Multi-column formats
-- Poor font rendering
-- Unreadable on small e-ink screens
+## Features
 
-**CleanRead** solves this by intelligently extracting and reformatting content into proper EPUB files.
+- **PDF Upload** - Drag-and-drop interface with validation
+- **Smart Conversion** - AI-powered layout detection via DataLab Marker API
+- **EPUB Download** - Reflowable, Kindle-optimized output
+- **Image & Table Support** - Extracts images, handles tables as HTML
 
-## ✨ Features
+## Quick Start
 
-### Current (Phase 1 - MVP)
-- 📤 Drag-and-drop PDF upload
-- 🔄 Intelligent PDF to EPUB conversion
-- 📥 Direct EPUB download
-- 🎨 Clean, responsive UI
+### Using Docker (Recommended)
 
-### Planned (Phase 2+)
-- 🔐 User authentication & history
-- 📧 Send to Kindle via email
-- 🌐 URL scraper for web articles
-- 🔌 Chrome extension
-- 📮 Email forwarding for newsletters
-- 📚 Batch processing & collections
-- 🧮 LaTeX formula support
-
-## 🛠️ Tech Stack
-
-### Backend
-- **FastAPI** - Modern Python web framework
-- **Celery** + **Redis** - Async task processing
-- **PostgreSQL** - Database
-- **SQLAlchemy** - ORM
-- **pdf2epub** - PDF conversion engine
-
-### Frontend
-- **React** + **TypeScript**
-- **Vite** - Build tool
-- **TailwindCSS** - Styling
-- **React Query** - API state management
-
-### Infrastructure
-- **Docker** - Containerization
-- **MinIO/S3** - File storage
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Python 3.9+
-- Node.js 18+
-- Docker & Docker Compose (optional)
-
-### Development Setup
-
-1. **Clone the repository**
 ```bash
 git clone <repo-url>
 cd clean_read
-```
-
-2. **Backend Setup**
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
-
-3. **Frontend Setup**
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-4. **Using Docker (Recommended)**
-```bash
 docker-compose up
 ```
 
-## 📁 Project Structure
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:8000
+- **API Docs**: http://localhost:8000/docs
+
+### Manual Setup
+
+See [SETUP.md](SETUP.md) for detailed instructions.
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Backend | FastAPI, PostgreSQL, Redis, Celery |
+| Frontend | React, TypeScript, Vite, TailwindCSS |
+| Processing | DataLab Marker API |
+| Infrastructure | Docker, Docker Compose |
+
+## Project Structure
 
 ```
 clean_read/
-├── backend/
+├── backend/           # FastAPI backend
 │   ├── app/
-│   │   ├── api/           # API endpoints
-│   │   ├── core/          # Config, security, dependencies
-│   │   ├── models/        # Database models
-│   │   ├── services/      # Business logic
-│   │   ├── tasks/         # Celery tasks
-│   │   └── main.py        # FastAPI app entry
-│   ├── tests/
-│   ├── requirements.txt
-│   └── Dockerfile
-├── frontend/
-│   ├── src/
-│   │   ├── components/    # React components
-│   │   ├── pages/         # Page components
-│   │   ├── services/      # API clients
-│   │   ├── hooks/         # Custom React hooks
-│   │   └── App.tsx
-│   ├── package.json
-│   └── Dockerfile
-├── docker-compose.yml
-└── README.md
+│   │   ├── api/       # API endpoints
+│   │   ├── core/      # Config, security
+│   │   ├── models/    # Database models
+│   │   ├── services/  # Business logic
+│   │   └── tasks/     # Celery tasks
+│   └── alembic/       # Database migrations
+├── frontend/          # React frontend
+│   └── src/
+│       ├── components/
+│       ├── services/
+│       └── context/
+└── docker-compose.yml
 ```
 
-## 🔧 Configuration
+## Configuration
 
-Create `.env` files in backend and frontend directories:
+**Required environment variables:**
 
-**backend/.env**
-```
-DATABASE_URL=postgresql://user:password@localhost/cleanread
+```bash
+# backend/.env
+DATABASE_URL=postgresql://cleanread:cleanread_dev@localhost:5432/cleanread
 REDIS_URL=redis://localhost:6379
 SECRET_KEY=your-secret-key
-STORAGE_PATH=./storage
+DATALAB_API_KEY=your-datalab-api-key  # Get from https://datalab.to
 ```
 
-**frontend/.env**
-```
+```bash
+# frontend/.env
 VITE_API_URL=http://localhost:8000
 ```
 
-## 📖 API Documentation
+## Documentation
 
-Once the backend is running, visit:
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
+- [SETUP.md](SETUP.md) - Development setup guide
+- [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture
+- [DEPLOYMENT.md](DEPLOYMENT.md) - Production deployment
+- [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
+- [ROADMAP.md](ROADMAP.md) - Development roadmap
 
-## 🧪 Testing
+## License
 
-```bash
-# Backend tests
-cd backend
-pytest
-
-# Frontend tests
-cd frontend
-npm test
-```
-
-## 📝 Development Roadmap
-
-- [x] Project structure
-- [ ] Basic PDF upload & conversion
-- [ ] Frontend UI
-- [ ] User authentication
-- [ ] Async job processing
-- [ ] Send to Kindle
-- [ ] URL scraper
-- [ ] Chrome extension
-- [ ] Email integration
-
-## 🤝 Contributing
-
-Contributions welcome! Please read our contributing guidelines first.
-
-## 📄 License
-
-MIT License - see LICENSE file for details
-
-## 🙏 Acknowledgments
-
-- [pdf2epub](https://github.com/overcuriousity/pdf2epub) - PDF conversion engine
-- [marker-pdf](https://github.com/VikParuchuri/marker) - PDF processing
+MIT License - see [LICENSE](LICENSE) for details.

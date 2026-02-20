@@ -1,239 +1,149 @@
 # CleanRead Setup Guide
 
-This guide will help you get CleanRead up and running on your local machine.
-
 ## Prerequisites
 
-- **Python 3.9+** (for backend)
-- **Node.js 18+** (for frontend)
-- **Docker & Docker Compose** (optional, recommended)
-- **PostgreSQL** (if not using Docker)
-- **Redis** (if not using Docker)
+- **Docker & Docker Compose** (recommended)
+- **Python 3.11+** (for manual setup)
+- **Node.js 18+** (for manual setup)
 
-## Quick Start with Docker (Recommended)
-
-The easiest way to run CleanRead is using Docker Compose:
+## Option 1: Docker Setup (Recommended)
 
 ```bash
-# 1. Clone the repository
-git clone <your-repo-url>
-cd clean_read
-
-# 2. Create environment files
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
-
-# 3. Start all services
+# Start all services
 docker-compose up
+
+# Or run in background
+docker-compose up -d
 ```
 
-That's it! The application will be available at:
+**Services:**
 - Frontend: http://localhost:5173
-- Backend API: http://localhost:8000
+- Backend: http://localhost:8000
 - API Docs: http://localhost:8000/docs
 
-## Manual Setup (Without Docker)
-
-### Backend Setup
-
+**Stop services:**
 ```bash
-# 1. Navigate to backend directory
-cd backend
-
-# 2. Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# 3. Install dependencies
-pip install -r requirements.txt
-
-# 4. Create .env file
-cp .env.example .env
-
-# 5. Update .env with your database credentials
-# Edit the DATABASE_URL and REDIS_URL
-
-# 6. Create storage directories
-mkdir -p storage/uploads storage/outputs
-
-# 7. Run the server
-uvicorn app.main:app --reload
+docker-compose down
 ```
 
-### Frontend Setup
+---
+
+## Option 2: Manual Setup
+
+### Step 1: Start Database & Redis (via Docker)
 
 ```bash
-# 1. Navigate to frontend directory
+docker-compose -f docker-compose.services-only.yml up -d
+```
+
+### Step 2: Backend Setup
+
+```bash
+cd backend
+
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Create storage directories
+mkdir -p storage/uploads storage/outputs
+
+# Create .env file
+cat > .env << EOF
+DATABASE_URL=postgresql://cleanread:cleanread_dev@localhost:5432/cleanread
+REDIS_URL=redis://localhost:6379
+SECRET_KEY=$(openssl rand -hex 32)
+STORAGE_PATH=./storage
+DATALAB_API_KEY=your-api-key-here
+EOF
+
+# Start backend
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### Step 3: Frontend Setup (new terminal)
+
+```bash
 cd frontend
 
-# 2. Install dependencies
+# Install dependencies
 npm install
 
-# 3. Create .env file
-cp .env.example .env
+# Create .env file
+echo "VITE_API_URL=http://localhost:8000" > .env
 
-# 4. Start development server
+# Start frontend
 npm run dev
 ```
 
-### Database Setup
+---
+
+## Native Backend (M1/M2/M3 Mac)
+
+For faster PDF processing with Apple Silicon GPU acceleration:
 
 ```bash
-# 1. Install PostgreSQL (if not already installed)
-# macOS:
-brew install postgresql
-brew services start postgresql
+# Start only database and Redis
+docker-compose -f docker-compose.services-only.yml up -d
 
-# Ubuntu:
-sudo apt install postgresql
-
-# 2. Create database
-psql postgres
-CREATE DATABASE cleanread;
-CREATE USER cleanread WITH PASSWORD 'cleanread_dev';
-GRANT ALL PRIVILEGES ON DATABASE cleanread TO cleanread;
-\q
-
-# 3. Run migrations (coming in Phase 2)
-# cd backend
-# alembic upgrade head
+# Run backend natively (in backend/ directory with venv activated)
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### Redis Setup
-
-```bash
-# macOS:
-brew install redis
-brew services start redis
-
-# Ubuntu:
-sudo apt install redis-server
-sudo systemctl start redis
+Verify GPU acceleration:
+```python
+import torch
+print(torch.backends.mps.is_available())  # Should be True
 ```
 
-## Development Workflow
-
-### Running Backend Tests
-
-```bash
-cd backend
-pytest
-```
-
-### Running Frontend Tests
-
-```bash
-cd frontend
-npm test
-```
-
-### Code Formatting
-
-```bash
-# Backend (Python)
-cd backend
-black .
-ruff check .
-
-# Frontend (TypeScript)
-cd frontend
-npm run lint
-```
+---
 
 ## Environment Variables
 
-### Backend (.env)
+### Backend (`backend/.env`)
 
-```env
-# Required
-DATABASE_URL=postgresql://cleanread:cleanread_dev@localhost:5432/cleanread
-REDIS_URL=redis://localhost:6379
-SECRET_KEY=your-secret-key-here
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `DATABASE_URL` | PostgreSQL connection string | Yes |
+| `REDIS_URL` | Redis connection string | Yes |
+| `SECRET_KEY` | JWT signing key (32+ chars) | Yes |
+| `STORAGE_PATH` | File storage directory | Yes |
+| `DATALAB_API_KEY` | DataLab API key | Yes |
 
-# Optional
-STORAGE_PATH=./storage
-MAX_UPLOAD_SIZE=52428800
-PDF_MAX_PAGES=500
-```
+### Frontend (`frontend/.env`)
 
-### Frontend (.env)
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `VITE_API_URL` | Backend API URL | Yes |
 
-```env
-VITE_API_URL=http://localhost:8000
+---
+
+## Testing
+
+```bash
+# Backend tests
+cd backend && pytest
+
+# Frontend tests
+cd frontend && npm test
 ```
 
 ## Troubleshooting
 
-### Port Already in Use
-
-If you get "port already in use" errors:
-
+**Port already in use:**
 ```bash
-# Check what's using port 8000
-lsof -i :8000
-
-# Kill the process
-kill -9 <PID>
+docker-compose down
+lsof -i :5432  # Check what's using PostgreSQL port
 ```
 
-### Database Connection Error
-
-- Verify PostgreSQL is running: `pg_isready`
-- Check credentials in `.env` file
-- Ensure database exists: `psql -l`
-
-### Redis Connection Error
-
-- Verify Redis is running: `redis-cli ping`
-- Should return `PONG`
-
-### Module Not Found Errors
-
+**Dependencies fail to install (macOS):**
 ```bash
-# Backend
-cd backend
-pip install -r requirements.txt
-
-# Frontend
-cd frontend
-npm install
+xcode-select --install
 ```
 
-### PDF Conversion Issues
-
-The current MVP uses a placeholder EPUB generator. For full PDF conversion:
-
-1. Ensure `marker-pdf` is installed correctly
-2. Check GPU/CPU compatibility
-3. For GPU support, install appropriate PyTorch version:
-   - NVIDIA: `pip install torch --index-url https://download.pytorch.org/whl/cu121`
-   - AMD: `pip install torch --index-url https://download.pytorch.org/whl/rocm6.2`
-
-## Next Steps
-
-- [ ] Test the upload functionality
-- [ ] Try converting a sample PDF
-- [ ] Explore the API documentation at `/docs`
-- [ ] Read the main README for feature roadmap
-- [ ] Consider setting up authentication (Phase 2)
-
-## Need Help?
-
-- Check the [GitHub Issues](your-repo/issues)
-- Read the [API Documentation](http://localhost:8000/docs)
-- Review the [Architecture Overview](README.md#architecture)
-
-## Production Deployment
-
-For production deployment:
-
-1. Set strong `SECRET_KEY` in backend/.env
-2. Use production-grade database (managed PostgreSQL)
-3. Use production-grade Redis (managed Redis)
-4. Set up proper CORS origins
-5. Enable HTTPS
-6. Set up monitoring and logging
-7. Configure file storage (S3, MinIO)
-8. Set up CI/CD pipeline
-
-See `DEPLOYMENT.md` (coming soon) for detailed production setup.
+**Database connection errors:**
+- Ensure PostgreSQL container is running: `docker ps`
+- Check DATABASE_URL matches docker-compose credentials

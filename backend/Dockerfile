@@ -1,7 +1,11 @@
+# =============================================================================
+# CleanRead Backend Dockerfile
+# =============================================================================
+
 FROM python:3.11-slim
 
 # Install system dependencies for PDF processing
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
     libpq-dev \
@@ -22,16 +26,14 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir --timeout=300 -r requirements.txt
 
-# Clone pdf2epub repository for EPUB generation
-RUN git clone https://github.com/overcuriousity/pdf2epub.git /opt/pdf2epub || true
-WORKDIR /opt/pdf2epub
-RUN pip install -r requirements.txt || true
-WORKDIR /app
+# Clone pdf2epub for EPUB generation
+RUN git clone https://github.com/overcuriousity/pdf2epub.git /opt/pdf2epub || true \
+    && cd /opt/pdf2epub && pip install -r requirements.txt || true
 
 # Copy application code
 COPY . .
 
-# Create storage directory
+# Create storage directories
 RUN mkdir -p /app/storage/uploads /app/storage/outputs
 
 EXPOSE 8000

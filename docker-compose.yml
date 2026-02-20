@@ -1,4 +1,19 @@
+# =============================================================================
+# CleanRead Docker Compose - Full Stack Development
+# =============================================================================
+#
+# Usage:
+#   docker-compose up        # Start all services
+#   docker-compose up -d     # Start in background
+#   docker-compose down      # Stop all services
+#   docker-compose logs -f   # View logs
+#
+# =============================================================================
+
 services:
+  # ---------------------------------------------------------------------------
+  # Database
+  # ---------------------------------------------------------------------------
   postgres:
     image: postgres:15-alpine
     container_name: cleanread_postgres
@@ -16,6 +31,9 @@ services:
       timeout: 5s
       retries: 5
 
+  # ---------------------------------------------------------------------------
+  # Cache & Message Broker
+  # ---------------------------------------------------------------------------
   redis:
     image: redis:7-alpine
     container_name: cleanread_redis
@@ -27,6 +45,9 @@ services:
       timeout: 5s
       retries: 5
 
+  # ---------------------------------------------------------------------------
+  # Backend API
+  # ---------------------------------------------------------------------------
   backend:
     build:
       context: ./backend
@@ -39,17 +60,20 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://cleanread:cleanread_dev@postgres:5432/cleanread
-      - REDIS_URL=redis://redis:6379
-      - SECRET_KEY=dev-secret-key-change-in-production
-      - STORAGE_PATH=/app/storage
-      - DATALAB_API_KEY=${DATALAB_API_KEY}
+      DATABASE_URL: postgresql://cleanread:cleanread_dev@postgres:5432/cleanread
+      REDIS_URL: redis://redis:6379
+      SECRET_KEY: dev-secret-key-change-in-production
+      STORAGE_PATH: /app/storage
+      DATALAB_API_KEY: ${DATALAB_API_KEY}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
 
+  # ---------------------------------------------------------------------------
+  # Celery Worker (Background Tasks)
+  # ---------------------------------------------------------------------------
   celery_worker:
     build:
       context: ./backend
@@ -60,17 +84,20 @@ services:
       - ./backend:/app
       - backend_storage:/app/storage
     environment:
-      - DATABASE_URL=postgresql://cleanread:cleanread_dev@postgres:5432/cleanread
-      - REDIS_URL=redis://redis:6379
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - SECRET_KEY=dev-secret-key-change-in-production
-      - STORAGE_PATH=/app/storage
-      - DATALAB_API_KEY=${DATALAB_API_KEY}
+      DATABASE_URL: postgresql://cleanread:cleanread_dev@postgres:5432/cleanread
+      REDIS_URL: redis://redis:6379
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      SECRET_KEY: dev-secret-key-change-in-production
+      STORAGE_PATH: /app/storage
+      DATALAB_API_KEY: ${DATALAB_API_KEY}
     depends_on:
       - postgres
       - redis
 
+  # ---------------------------------------------------------------------------
+  # Frontend
+  # ---------------------------------------------------------------------------
   frontend:
     build:
       context: ./frontend
@@ -83,7 +110,7 @@ services:
     ports:
       - "5173:5173"
     environment:
-      - VITE_API_URL=http://localhost:8000
+      VITE_API_URL: http://localhost:8000
     depends_on:
       - backend
 

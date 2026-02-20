@@ -1,11 +1,26 @@
+# =============================================================================
+# CleanRead Docker Compose - Services Only
+# =============================================================================
+#
+# Use this when running backend natively (e.g., for M1/M2/M3 GPU acceleration)
+#
+# Usage:
+#   docker-compose -f docker-compose.services-only.yml up -d
+#   docker-compose -f docker-compose.services-only.yml down
+#
+# =============================================================================
+
 services:
+  # ---------------------------------------------------------------------------
+  # Database
+  # ---------------------------------------------------------------------------
   postgres:
     image: postgres:15-alpine
     container_name: cleanread_postgres
     environment:
-      - POSTGRES_USER=cleanread
-      - POSTGRES_PASSWORD=cleanread_dev
-      - POSTGRES_DB=cleanread
+      POSTGRES_USER: cleanread
+      POSTGRES_PASSWORD: cleanread_dev
+      POSTGRES_DB: cleanread
     ports:
       - "5432:5432"
     volumes:
@@ -16,6 +31,9 @@ services:
       timeout: 5s
       retries: 5
 
+  # ---------------------------------------------------------------------------
+  # Cache & Message Broker
+  # ---------------------------------------------------------------------------
   redis:
     image: redis:7-alpine
     container_name: cleanread_redis
@@ -29,6 +47,9 @@ services:
       timeout: 3s
       retries: 5
 
+  # ---------------------------------------------------------------------------
+  # Frontend (optional - can also run with npm run dev)
+  # ---------------------------------------------------------------------------
   frontend:
     build:
       context: ./frontend
@@ -41,7 +62,7 @@ services:
     ports:
       - "5173:5173"
     environment:
-      - VITE_API_URL=http://host.docker.internal:8000
+      VITE_API_URL: http://host.docker.internal:8000
 
 volumes:
   postgres_data:
