@@ -46,6 +46,12 @@ uploads/
 *.pdf
 *.epub
 
+# Test artifacts
+epub_*/
+final_epub/
+test_*.epub
+*_output.epub
+
 # Database
 *.db
 *.sqlite
